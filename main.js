@@ -44,7 +44,7 @@ app.get('/set', function(req, res){
 	var key = "key"
 	client.set(key, "this message will self-destruct in 10 seconds");
 	client.expire(key, 10)
-	res.send('inserted')
+	res.send('Key set')
 })
 
 app.get('/get', function(req, res){
@@ -73,7 +73,7 @@ app.get('/destroy', function(req, res){
 	client.lrem("servers", 0, parseInt(port), function(err, value){
 		numPorts = numPorts - 1;
 	});
-	res.send("Server destroyed")
+	res.send('Server at port number' + port + 'destroyed')
 	client.lrange("servers", 0, -1, function(err,value){ console.log("Server list after destroy is ", value)});
 })
 
