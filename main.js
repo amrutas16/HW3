@@ -16,7 +16,7 @@ var proxy = httpProxy.createProxyServer({});
 
 http.createServer(function(req, res) {
 	client.rpoplpush('proxyQueue', 'proxyQueue', function(err, reply){
-		console.log('Choosing ',reply)
+		// console.log('Choosing ',reply)
 		var url = 'http://localhost:' + reply
 		console.log('url is ', url)
 		proxy.web(req, res, {target: url});	
