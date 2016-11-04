@@ -18,6 +18,7 @@ http.createServer(function(req, res) {
 	client.rpoplpush('proxyQueue', 'proxyQueue', function(err, reply){
 		console.log('Choosing ',reply)
 		var url = 'http://localhost:' + reply
+		console.log('url is ', url)
 		proxy.web(req, res, {target: url});	
 	})
   	
@@ -56,7 +57,10 @@ app.get('/recent', function(req, res){
 })
 
 app.get('/spawn', function(req, res){
-	client.del("servers", function(err, reply){})
+	if(numPorts == 0)
+	{
+		client.del("servers", function(err, reply){})
+	}
 	var server = createServer();
 	var host = server.address().address
 	var port = server.address().port
@@ -65,44 +69,49 @@ app.get('/spawn', function(req, res){
 		console.log("Server list after spawning is ",list);
 	});	
 	
-	res.send("Server spawned")
+	res.send("Server spawned at port " + port)
 })
 
 app.get('/destroy', function(req, res){
-	var port = getRandomPortNumber();
-	client.lrem("servers", 0, parseInt(port), function(err, value){
-		numPorts = numPorts - 1;
-	});
-	res.send('Server at port number' + port + 'destroyed')
-	client.lrange("servers", 0, -1, function(err,value){ console.log("Server list after destroy is ", value)});
+	if(numPorts == 0)
+	{
+		res.send('No ports to destroy')
+	}
+	else
+	{
+		var port = getRandomPortNumber();
+		client.lrem("servers", 0, parseInt(port), function(err, value){
+			numPorts = numPorts - 1;
+		});
+		res.send('Server at port number ' + port + ' destroyed')
+		client.lrange("servers", 0, -1, function(err,value){ console.log("Server list after destroy is ", value)});	
+	}
 })
 
 function getRandomPortNumber()
 {
-	// if(numPorts == 1)
-	// {
-	// 	return defaultPort + 1;
-	// }
-
-	var n = Math.floor((Math.random() * (num - 1)) + 1);
+	var n = Math.floor((Math.random() * (numPorts - 1)) + 1);
 	return defaultPort + n;
 } 
 
 app.get('/listservers', function(req, res){
-	client.lrange("servers", 0, -1, function(err,value){ console.log("Server list is ", value)});
+	client.lrange("servers", 0, -1, function(err,value){ 
+		res.send(value);
+		console.log("Server list is ", value)});
 })
 
 app.post('/upload',[ multer({ dest: './uploads/'}), function(req, res){
-   console.log(req.body) // form fields
-   console.log(req.files) // form files
+   // console.log(req.body) // form fields
+   // console.log(req.files) // form files
 
    if( req.files.image )
    {
 	   fs.readFile( req.files.image.path, function (err, data) {
 	  		if (err) throw err;
 	  		var img = new Buffer(data).toString('base64');
-	  		console.log(img);
-	  		client.lpush("imglist", img)
+	  		// console.log(img);
+	  		client.lpush("imglist", img, function(err, value){
+	  		})
 		});
 	}
 
